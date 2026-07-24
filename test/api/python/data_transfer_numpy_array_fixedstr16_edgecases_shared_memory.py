@@ -5,10 +5,25 @@ import numpy as np
 from daphne.context.daphne_context import DaphneContext
 
 
-def assert_raises(expected_exception, func):
+LONG_STRING_ERROR = (
+    "transferring a numpy array of strings longer than 15 bytes "
+    "to DAPHNE via shared memory is not supported yet"
+)
+UNSUPPORTED_OBJECT_ERROR = (
+    "object arrays transferred as FixedStr16 may only contain "
+    "str, numpy.str_, bytes, numpy.bytes_, bytearray, memoryview, "
+    "None, np.nan, pd.NA, or pd.NaT values"
+)
+
+
+def assert_raises(expected_exception, expected_message, func):
     try:
         func()
-    except expected_exception:
+    except expected_exception as error:
+        if str(error) != expected_message:
+            raise AssertionError(
+                f"expected error message {expected_message!r}, got {str(error)!r}"
+            ) from error
         return
     raise AssertionError(f"expected {expected_exception.__name__}")
 
@@ -36,18 +51,22 @@ print_matrix(dctx.from_numpy(object_values, shared_memory=True))
 # 16 bytes must be rejected because FixedStr16 needs one byte for null termination.
 assert_raises(
     RuntimeError,
+    LONG_STRING_ERROR,
     lambda: dctx.from_numpy(np.array([b"1234567890123456"], dtype="S16"), shared_memory=True),
 )
 assert_raises(
     RuntimeError,
+    LONG_STRING_ERROR,
     lambda: dctx.from_numpy(np.array(["é" * 8], dtype=str), shared_memory=True),
 )
 assert_raises(
     RuntimeError,
+    LONG_STRING_ERROR,
     lambda: dctx.from_numpy(np.array([b"1234567890123456"], dtype=object), shared_memory=True),
 )
 assert_raises(
     TypeError,
+    UNSUPPORTED_OBJECT_ERROR,
     lambda: dctx.from_numpy(np.array([object()], dtype=object), shared_memory=True),
 )
 
