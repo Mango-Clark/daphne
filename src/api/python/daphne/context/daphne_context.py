@@ -247,6 +247,9 @@ class DaphneContext(object):
                 # TODO Raise an error here?
                 print("unsupported numpy dtype")
 
+            # Shared-memory import expects row-major contiguous storage.
+            mat = np.ascontiguousarray(mat)
+
             # Data transfer via shared memory.
             address = mat.ctypes.data
 
