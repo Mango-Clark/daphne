@@ -3980,6 +3980,7 @@
             [["DenseMatrix", "bool"]],
             [["DenseMatrix", "size_t"]],
             [["DenseMatrix", "std::string"]],
+            [["DenseMatrix", "FixedStr16"]],
             [["CSRMatrix", "double"]],
             [["CSRMatrix", "float"]],
             [["CSRMatrix", "int64_t"]],
