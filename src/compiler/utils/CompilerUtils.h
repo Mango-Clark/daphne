@@ -192,8 +192,6 @@ struct CompilerUtils {
             std::string vtName;
             if (llvm::isa<mlir::daphne::StringType>(matTy.getElementType()))
                 vtName = "std::string";
-            else if (llvm::isa<mlir::daphne::FixedStr16Type>(matTy.getElementType()))
-                vtName = "FixedStr16";
             else
                 vtName = mlirTypeToCppTypeName(matTy.getElementType(), angleBrackets, false);
             switch (matTy.getRepresentation()) {
@@ -215,8 +213,6 @@ struct CompilerUtils {
             std::string vtName;
             if (llvm::isa<mlir::daphne::StringType>((colTy.getValueType())))
                 vtName = "std::string";
-            else if (llvm::isa<mlir::daphne::FixedStr16Type>(colTy.getValueType()))
-                vtName = "FixedStr16";
             else
                 vtName = mlirTypeToCppTypeName(colTy.getValueType(), angleBrackets, false);
             return angleBrackets ? ("Column<" + vtName + ">") : ("Column_" + vtName);
