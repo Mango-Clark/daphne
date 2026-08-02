@@ -1,6 +1,7 @@
 # Edge cases for numpy string transfer to DAPHNE via FixedStr16 shared memory.
 
 import numpy as np
+import pandas as pd
 
 from daphne.context.daphne_context import DaphneContext
 
@@ -47,6 +48,14 @@ object_values = np.array(
     dtype=object,
 )
 print_matrix(dctx.from_numpy(object_values, shared_memory=True))
+
+# Null-like values use NumPy's direct fixed-width string conversion.
+null_like_values = np.array([None, np.nan, pd.NA, pd.NaT], dtype=object)
+print_matrix(dctx.from_numpy(null_like_values, shared_memory=True))
+
+# The vectorized null conversion also applies inside otherwise mixed arrays.
+mixed_null_like_values = np.array([["text", np.nan, pd.NA, pd.NaT]], dtype=object)
+print_matrix(dctx.from_numpy(mixed_null_like_values, shared_memory=True))
 
 # 16 bytes must be rejected because FixedStr16 needs one byte for null termination.
 assert_raises(

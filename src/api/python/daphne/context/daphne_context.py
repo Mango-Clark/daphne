@@ -173,46 +173,42 @@ class DaphneContext(object):
                         )
                 mat = encoded.astype('S16', copy=False)
             elif d_type.kind == 'O':
-                fixed = np.empty(mat.shape, dtype='S16')
-                for i, value in enumerate(mat.flat):
-                    if value is None:
-                        encoded = b"None"
-                    elif isinstance(value, float) and np.isnan(value):
-                        encoded = b"np.nan"
-                    elif isinstance(value, np.floating) and np.isnan(value):
-                        encoded = b"np.nan"
-                    # pandas.NA
-                    elif type(value).__name__ == "NAType":
-                        encoded = b"pd.NA"
-                    # pandas.NaT
-                    elif type(value).__name__ == "NaTType":
-                        encoded = b"pd.NaT"
-                    elif isinstance(value, str):
-                        encoded = value.encode('utf-8')
-                    elif isinstance(value, np.str_):
-                        encoded = str(value).encode('utf-8')
-                    elif isinstance(value, bytes):
-                        encoded = value
-                    elif isinstance(value, np.bytes_):
-                        encoded = bytes(value)
-                    elif isinstance(value, bytearray):
-                        encoded = bytes(value)
-                    elif isinstance(value, memoryview):
-                        encoded = value.tobytes()
-                    else:
-                        raise TypeError(
-                            "object arrays transferred as FixedStr16 may only contain "
-                            "str, numpy.str_, bytes, numpy.bytes_, bytearray, memoryview, "
-                            "None, np.nan, pd.NA, or pd.NaT values"
-                        )
-                    if len(encoded) > 15:
-                        # TODO Support STR(std::string) for longer strings.
-                        raise RuntimeError(
-                            "transferring a numpy array of strings longer than 15 bytes "
-                            "to DAPHNE via shared memory is not supported yet"
-                        )
-                    fixed.flat[i] = encoded
-                mat = fixed
+                null_like = pd.isna(mat)
+                if np.all(null_like):
+                    mat = mat.astype('S16', copy=False)
+                else:
+                    fixed = np.empty(mat.shape, dtype='S16')
+                    if np.any(null_like):
+                        fixed[null_like] = mat[null_like].astype('S16', copy=False)
+                    for i, value in enumerate(mat.flat):
+                        if null_like.flat[i]:
+                            continue
+                        if isinstance(value, str):
+                            encoded = value.encode('utf-8')
+                        elif isinstance(value, np.str_):
+                            encoded = str(value).encode('utf-8')
+                        elif isinstance(value, bytes):
+                            encoded = value
+                        elif isinstance(value, np.bytes_):
+                            encoded = bytes(value)
+                        elif isinstance(value, bytearray):
+                            encoded = bytes(value)
+                        elif isinstance(value, memoryview):
+                            encoded = value.tobytes()
+                        else:
+                            raise TypeError(
+                                "object arrays transferred as FixedStr16 may only contain "
+                                "str, numpy.str_, bytes, numpy.bytes_, bytearray, memoryview, "
+                                "None, np.nan, pd.NA, or pd.NaT values"
+                            )
+                        if len(encoded) > 15:
+                            # TODO Support STR(std::string) for longer strings.
+                            raise RuntimeError(
+                                "transferring a numpy array of strings longer than 15 bytes "
+                                "to DAPHNE via shared memory is not supported yet"
+                            )
+                        fixed.flat[i] = encoded
+                    mat = fixed
 
             # dtype might have been changed above
             d_type = mat.dtype
